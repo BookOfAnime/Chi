@@ -1,74 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const Particle = ({ color }) => (
+const PaintBrush = ({ position, isActive }) => (
   <div style={{
     position: 'absolute',
-    width: '5px',
-    height: '5px',
-    backgroundColor: color,
-    borderRadius: '50%',
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    animation: `float ${Math.random() * 5 + 5}s linear infinite`,
+    width: '50px',
+    height: '50px',
+    background: 'url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIwLjcxIDQuMDRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwTDEyLjA3IDExLjI1IDEwLjU0IDkuNzFsNy4xOC03LjE4YzEuOTUtMS45NSA1LjEyLTEuOTUgNy4wNyAwczEuOTUgNS4xMiAwIDcuMDdsLTcuMTggNy4xOC0xLjUzLTEuNTMgNy4wNy03LjA3Yy4zOS0uMzkuMzktMS4wMiAwLTEuNDFMMjAuNzEgNC4wNHoiIGZpbGw9IiNGRkQxMDAiLz48cGF0aCBkPSJNMTIuMDcgMTEuMjUgMTYgMTUuMTggMTEuMjUgMTlsLTMuOTMtMy45MyAzLjkzLTMuOTN6TTcuMTEgMTkuNjQgMy43NSAxNi4yOWMtLjc4LS43OC0uNzgtMi4wNSAwLTIuODNsMS40MS0xLjQxIDMuOTMgMy45My0xLjQxIDEuNDFjLS4zOS4zOS0uMzkgMS4wMiAwIDEuNDFsLjU3LjU3TDcuMTEgMTkuNjR6IiBmaWxsPSIjRkZEMTAwIi8+PC9zdmc+) center/contain no-repeat',
+    left: position.x - 25,
+    top: position.y - 25,
+    transform: 'rotate(-45deg)',
+    opacity: isActive ? 1 : 0,
+    transition: 'opacity 0.3s ease',
+    pointerEvents: 'none',
+    zIndex: 10,
   }} />
 );
 
 const FilterWebsite = () => {
-  const [filterPosition, setFilterPosition] = useState(-100);
-  const [bgColor, setBgColor] = useState(0);
-  const [particles, setParticles] = useState([]);
+  const [paintedAreas, setPaintedAreas] = useState([]);
+  const [brushPosition, setBrushPosition] = useState({ x: 0, y: 0 });
+  const [isBrushActive, setIsBrushActive] = useState(false);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    const animateFilter = () => {
-      setFilterPosition((prevPosition) =>
-        prevPosition >= 100 ? -100 : prevPosition + 0.5
-      );
-    };
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'yellow';
 
-    const animateBg = () => {
-      setBgColor((prevColor) => (prevColor + 1) % 200);
-    };
+    paintedAreas.forEach(area => {
+      ctx.beginPath();
+      ctx.arc(area.x, area.y, 30, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+  }, [paintedAreas]);
 
-    const filterAnimationId = setInterval(animateFilter, 20);
-    const bgAnimationId = setInterval(animateBg, 50);
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setBrushPosition({ x, y });
 
-    setParticles(Array(20).fill().map((_, i) => <Particle key={i} color={i % 2 === 0 ? 'yellow' : 'black'} />));
-
-    return () => {
-      clearInterval(filterAnimationId);
-      clearInterval(bgAnimationId);
-    };
-  }, []);
-
-  const getBgColor = () => {
-    if (bgColor < 100) {
-      return `rgb(${255 * bgColor / 100}, ${255 * bgColor / 100}, 0)`;
-    } else {
-      const blackness = (bgColor - 100) / 100;
-      return `rgb(${255 * (1 - blackness)}, ${255 * (1 - blackness)}, 0)`;
+    if (isBrushActive) {
+      setPaintedAreas(prev => [...prev, { x, y }]);
     }
   };
 
   return (
-    <div style={{...styles.container, backgroundColor: getBgColor()}}>
-      {particles}
+    <div style={styles.container} onMouseMove={handleMouseMove} onMouseDown={() => setIsBrushActive(true)} onMouseUp={() => setIsBrushActive(false)} onMouseLeave={() => setIsBrushActive(false)}>
+      <canvas ref={canvasRef} style={styles.canvas} width={window.innerWidth} height={window.innerHeight} />
       <div style={styles.imageContainer}>
-        <div
-          style={{
-            ...styles.yellowFilter,
-            left: `${filterPosition}%`,
-          }}
-        />
-        <img
-          src="./chigga.png"
-          alt="Centered Image"
-          style={styles.image}
-        />
-        <div style={{...styles.text, ...styles.top, animation: 'pulse 2s infinite'}}>Chigger</div>
-        <div style={{...styles.text, ...styles.right, animation: 'slide-in 1s ease-out'}}>Half Nigga</div>
-        <div style={{...styles.text, ...styles.bottom, animation: 'pulse 2s infinite 1s'}}>Half Asian</div>
-        <div style={{...styles.text, ...styles.left, animation: 'slide-in 1s ease-out 0.5s'}}>Chigger</div>
+        <img src="./chigga.png" alt="Centered Image" style={styles.image} />
+        <div style={styles.textOverlay}>
+          <div style={styles.text}>Chigga</div>
+          <div style={styles.text}>Half N-word</div>
+          <div style={styles.text}>Half Asian</div>
+        </div>
       </div>
+      <PaintBrush position={brushPosition} isActive={isBrushActive} />
     </div>
   );
 };
@@ -77,84 +65,51 @@ const styles = {
   container: {
     width: '100vw',
     height: '100vh',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
     position: 'relative',
-    transition: 'background-color 0.5s ease',
+    overflow: 'hidden',
+    backgroundColor: 'black',
+    cursor: 'none',
+  },
+  canvas: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
   },
   imageContainer: {
-    width: '80%',
-    height: '80%',
-    position: 'relative',
-    overflow: 'hidden',
-    boxShadow: '0 0 20px rgba(0, 0, 0, 0.3)',
-    borderRadius: '10px',
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '60%',
+    height: '60%',
+    zIndex: 2,
+    boxShadow: '0 0 20px rgba(255, 255, 0, 0.5)',
   },
   image: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    position: 'relative',
-    zIndex: 1,
-    transition: 'transform 0.3s ease',
-    ':hover': {
-      transform: 'scale(1.05)',
-    },
   },
-  yellowFilter: {
+  textOverlay: {
     position: 'absolute',
     top: 0,
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(45deg, rgba(255, 255, 0, 0.3), rgba(255, 255, 0, 0.5))',
-    zIndex: 0,
-    mixBlendMode: 'overlay',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    padding: '20px',
+    background: 'rgba(0, 0, 0, 0.5)',
   },
   text: {
-    position: 'absolute',
-    fontWeight: 'bold',
-    zIndex: 2,
     color: 'white',
+    fontSize: '24px',
+    fontWeight: 'bold',
     textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
-  },
-  top: {
-    top: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    fontSize: '48px',
-  },
-  right: {
-    top: '50%',
-    right: '20px',
-    transform: 'translateY(-50%) rotate(90deg)',
-    fontSize: '24px',
-  },
-  bottom: {
-    bottom: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    fontSize: '48px',
-  },
-  left: {
-    top: '50%',
-    left: '20px',
-    transform: 'translateY(-50%) rotate(-90deg)',
-    fontSize: '24px',
-  },
-  '@keyframes pulse': {
-    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-    '50%': { opacity: 0.8, transform: 'scale(1.1)' },
-  },
-  '@keyframes slide-in': {
-    from: { opacity: 0, transform: 'translateX(-50px)' },
-    to: { opacity: 1, transform: 'translateX(0)' },
-  },
-  '@keyframes float': {
-    '0%': { transform: 'translateY(0px)' },
-    '50%': { transform: 'translateY(-20px)' },
-    '100%': { transform: 'translateY(0px)' },
   },
 };
 

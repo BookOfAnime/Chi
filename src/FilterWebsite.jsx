@@ -109,7 +109,7 @@ const FilterWebsite = () => {
           <img src="./chigga.png" alt="Centered Image" style={styles.image} />
           <div style={styles.textOverlay}>
             <div style={styles.text}>Chigger</div>
-            <div style={styles.text}>Half N-word</div>
+            <div style={styles.text}>Half Nigga</div>
             <div style={styles.text}>Half Asian</div>
           </div>
           <button onClick={toggleDrawingMode} style={styles.button}>Draw your Chigger</button>
